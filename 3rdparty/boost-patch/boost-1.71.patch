@@ -1,0 +1,42 @@
+--- a/src/operations.cpp
++++ b/src/operations.cpp
+@@ -201,6 +201,12 @@ typedef struct _REPARSE_DATA_BUFFER {
+ # ifndef IO_REPARSE_TAG_SYMLINK
+ #   define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
+ # endif
++# ifndef IO_REPARSE_TAG_MOUNT_POINT
++#   define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003L)
++# endif
++# ifndef IO_REPARSE_TAG_DEDUP
++#   define IO_REPARSE_TAG_DEDUP (0x80000013L)
++# endif
+
+ inline std::wstring wgetenv(const wchar_t* name)
+ {
+@@ -1661,12 +1667,24 @@ namespace detail
+     if (!error(::DeviceIoControl(h.handle, FSCTL_GET_REPARSE_POINT,
+           0, 0, info.buf, sizeof(info), &sz, 0) == 0 ? BOOST_ERRNO : 0, p, ec,
+           "boost::filesystem::read_symlink" ))
++       if (info.rdb.ReparseTag == IO_REPARSE_TAG_SYMLINK)
++       {
+       symlink_path.assign(
+
+static_cast<wchar_t*>(info.rdb.SymbolicLinkReparseBuffer.PathBuffer)
+         + info.rdb.SymbolicLinkReparseBuffer.PrintNameOffset/sizeof(wchar_t),
+
+static_cast<wchar_t*>(info.rdb.SymbolicLinkReparseBuffer.PathBuffer)
+         + info.rdb.SymbolicLinkReparseBuffer.PrintNameOffset/sizeof(wchar_t)
+         + info.rdb.SymbolicLinkReparseBuffer.PrintNameLength/sizeof(wchar_t));
++       }
++       else if (info.rdb.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
++       {
++          symlink_path.assign(
++ static_cast<wchar_t*>(info.rdb.MountPointReparseBuffer.PathBuffer)
++             + info.rdb.MountPointReparseBuffer.PrintNameOffset / sizeof(wchar_t),
++ static_cast<wchar_t*>(info.rdb.MountPointReparseBuffer.PathBuffer)
++             + info.rdb.MountPointReparseBuffer.PrintNameOffset / sizeof(wchar_t)
++             + info.rdb.MountPointReparseBuffer.PrintNameLength / sizeof(wchar_t));
++       }
+ #     endif
+     return symlink_path;
+   }

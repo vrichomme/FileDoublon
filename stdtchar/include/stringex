@@ -1,0 +1,86 @@
+#pragma once
+#ifndef _STRINGEX_
+#define _STRINGEX_
+
+#include <_stdex.h>
+#include <cstdtchar>
+#include <string>
+
+_STDEX_BEGIN
+
+/*
+template<class _Elem,
+	class _Traits,
+	class _Ax>
+	class basic_string
+		: public _String_val<_Elem, _Ax>
+	{	// null-terminated transparent array of elements
+	};
+
+	typedef basic_string<char, char_traits<char>, allocator<char> >			string;
+*/
+
+	inline std::string ws2s(const std::wstring& s)
+	{
+		int len;
+		int slength = (int)s.length();
+		len = WideCharToMultiByte(CP_ACP, 0, s.c_str(), slength, 0, 0, 0, 0);
+		std::string r(len, '\0');
+		if (len > 0)
+		{
+			WideCharToMultiByte(CP_ACP, 0, s.c_str(), slength, &r[0], len, 0, 0);
+		}
+		return r;
+	}
+
+	inline std::wstring s2ws(const std::string& s)
+	{
+		int len;
+		int slength = (int)s.length();
+		len = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, 0, 0);
+		std::wstring r(len, L'\0');
+		if (len > 0)
+		{
+			MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, &r[0], len);
+		}
+		return r;
+	}
+
+class stringex : public std::basic_string<char>
+{
+public:
+	typedef std::basic_string<char> string_type;
+public:	
+	stringex() : string_type() {}
+	stringex(const char * str) : string_type(str){}
+	stringex(const char * str, size_t n) : string_type(str,n) {}
+	stringex(size_t n , char c ) : string_type(n,c) {}
+
+	stringex(const wchar_t * wstr) : string_type(ws2s(wstr)){}
+	stringex(const wchar_t * wstr, size_t n) : string_type(ws2s(wstr),n) {}
+
+};
+
+class wstringex : public std::basic_string<wchar_t>
+{
+public:
+	typedef std::basic_string<wchar_t> string_type;
+public:
+	wstringex() : string_type() {}
+	wstringex(const wchar_t * wstr) : string_type(wstr){}
+	wstringex(const wchar_t * wstr, size_t n) : string_type(wstr, n) {}
+	wstringex(size_t n, wchar_t wc) : string_type(n, wc) {}
+
+	wstringex(const char * str) : string_type(s2ws(str)){}
+	wstringex(const char * str, size_t n) : string_type(s2ws(str), n) {}
+
+};
+#ifdef _UNICODE
+typedef wstringex	tstringex;
+#else
+typedef stringex	tstringex;
+#endif
+
+_STDEX_END
+
+#endif
