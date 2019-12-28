@@ -104,6 +104,8 @@ int _tmain(int argc, TCHAR *argv[])
     walker.addExtension(_T(".jpeg"));
     //walker.addPath(_T("C:\\Users\\Vincent\\Pictures"));
     walker.addPath(_T("C:\\Users\\Vincent\\AppData\\Roaming\\Apple Computer\\MobileSync"));
+    //walker.addPath(_T("E:\\Backup\\PointedFromSymlink"));
+ 
     walker.startWalking();
 
     return 0;

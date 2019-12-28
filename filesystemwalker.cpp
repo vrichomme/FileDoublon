@@ -5,8 +5,6 @@
 #include <boost/locale.hpp>
 #include <algorithm>
 
-//namespace fs = std::experimental::filesystem;
-
 fs::path resolve(
    const fs::path& p,
    const fs::path& base = fs::current_path()
@@ -76,25 +74,29 @@ bool FileSystemWalker::isCandidateBasedOnName(const fs::path& path)
 
 
 
-void FileSystemWalker::startWalking_(const fs::path& pathToScan, int level)
+void FileSystemWalker::startWalking_(TraversalContext& ctx)
 {
    // Note: recursive_directory_iterator is broken on Windows with junction
-   for (const auto& entry : fs::directory_iterator(pathToScan))
+   for (const auto& entry : fs::directory_iterator(ctx.curPathParentDir))
    {
-      const auto filenameStr = entry.path().filename().string();
-      if (fs::is_directory(entry.status()))
+      ctx.curPathEntry = entry.path();
+      ctx.curStatusEntry = fs::status(ctx.curPathEntry);
+      ctx.curSymlinkStatusEntry = fs::symlink_status(ctx.curPathEntry);
+
+      if (fs::is_directory(ctx.curStatusEntry))
       {
-         startWalking_(entry, level + 1);
+         ctx.curPathParentDir = entry.path();
+         ctx.level += 1;
+         startWalking_(ctx);
       }
-      else if(fs::is_regular_file(entry.status()))
+      else if(fs::is_regular_file(ctx.curStatusEntry))
       {
-         const fs::path& curFileEntry = entry.path();
-         const auto& ext = boost::algorithm::to_lower_copy(curFileEntry.extension().native());
+         const auto& ext = boost::algorithm::to_lower_copy(ctx.curPathEntry.extension().native());
          if (std::find(m_exts.begin(), m_exts.end(), ext) != m_exts.end())
          {
-            bool bIsCandidate = isCandidateBasedOnName(curFileEntry);
+            bool bIsCandidate = isCandidateBasedOnName(ctx.curPathEntry);
 
-            uintmax_t size = fs::file_size(curFileEntry);
+            uintmax_t size = fs::file_size(ctx.curPathEntry);
             auto itFound = m_fileIndexes.find(size);
             if (itFound == m_fileIndexes.end())
             {
@@ -103,9 +105,9 @@ void FileSystemWalker::startWalking_(const fs::path& pathToScan, int level)
             else
             {
                const fs::path& orgFileEntry = (*itFound).second;
-               if (filenameIsContained(curFileEntry.stem().native(), orgFileEntry.stem().native()))
+               if (filenameIsContained(ctx.curPathEntry.stem().native(), orgFileEntry.stem().native()))
                {
-                  m_doublons.emplace_back(FsItem(curFileEntry, orgFileEntry));
+                  m_doublons.emplace_back(FsItem(ctx.curPathEntry, orgFileEntry));
                }
             }
          }
@@ -117,7 +119,9 @@ void FileSystemWalker::startWalking()
 {
    for (auto& path : m_paths)
    {
-      startWalking_(path);
+      TraversalContext ctx;
+      ctx.curPathParentDir = path;
+      startWalking_(ctx);
    }
 }
 

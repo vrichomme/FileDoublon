@@ -25,7 +25,18 @@ struct FsItem
 
 class FileSystemWalker 
 {    
+   struct TraversalContext
+   {
+      fs::path curPathParentDir;
+      fs::path curPathEntry;
+      fs::file_status curStatusEntry;
+      fs::file_status curSymlinkStatusEntry;
+      int level;
+   };
 public:
+   enum Options
+   {
+   };
     explicit FileSystemWalker();
 
     void addExtension(const std::tstring& sExt);
@@ -34,8 +45,9 @@ public:
 
     void startWalking();
 
+   void setWalkingOptions(Options eOptions);
 private:
-   void startWalking_(const fs::path& pathToScan, int level = 0);
+   void startWalking_(TraversalContext& ctx);
 
    bool isCandidateBasedOnName(const fs::path& path);
 

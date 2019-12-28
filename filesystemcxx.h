@@ -1,6 +1,6 @@
 #pragma once
 
-//#define USE_BOOST_FS 1
+#define USE_BOOST_FS 1
 
 #if USE_BOOST_FS
 
